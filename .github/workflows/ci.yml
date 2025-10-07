@@ -1,0 +1,56 @@
+name: CI - PostgreSQL Migrations
+
+# Когда запускать workflow
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-migrations:
+    runs-on: ubuntu-latest
+
+    # Сервис PostgreSQL
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: snezha
+          POSTGRES_PASSWORD: 123
+          POSTGRES_DB: practice_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U snezha"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      # 1 Получаем файлы репозитория
+      - uses: actions/checkout@v4
+
+      # 2 Ждём, пока база полностью запустится
+      - name: Wait for Postgres
+        run: sleep 15
+
+      # 3 Применяем миграцию V1
+      - name: Apply migration V1
+        run: |
+          PGPASSWORD=123 psql -h localhost -U snezha -d practice_db -f migrations/V1__create_schema.sql
+
+      # 4 Загружаем тестовые данные
+      - name: Load sample data
+        run: |
+          PGPASSWORD=123 psql -h localhost -U snezha -d practice_db -f scripts/data_load.sql
+
+      # 5 Проверяем количество записей в таблицах
+      - name: Check data
+        run: |
+          echo "Customers count:"
+          PGPASSWORD=123 psql -h localhost -U snezha -d practice_db -c "SELECT COUNT(*) FROM customers;"
+          echo "Products count:"
+          PGPASSWORD=123 psql -h localhost -U snezha -d practice_db -c "SELECT COUNT(*) FROM products;"
+          echo "Orders count:"
+          PGPASSWORD=123 psql -h localhost -U snezha -d practice_db -c "SELECT COUNT(*) FROM orders;"
