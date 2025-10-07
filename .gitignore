@@ -1,0 +1,18 @@
+# Windows system files
+Thumbs.db
+Desktop.ini
+
+# VSCode
+.vscode/
+
+# Python venv
+venv/
+__pycache__/
+
+# Dumps and backups
+backups/
+*.dump
+*.bak
+
+# Logs
+*.log
